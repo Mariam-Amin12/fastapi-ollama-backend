@@ -56,6 +56,8 @@ class OllamaService:
                     status_code=503,
                     detail=f"Could not reach Ollama at {self.base_url}. Is it running? ({exc})",
                 ) from exc
+
+            print ("generate response:", r.json())
             return r.json()
 
     async def chat(self, messages: list[ChatMessage], model: str | None = None) -> dict:
