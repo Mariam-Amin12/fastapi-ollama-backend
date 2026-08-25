@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ollama Playground</title>
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #19232e;
+            --muted: #63707b;
+            --line: #dce4e7;
+            --paper: #f7f8f4;
+            --panel: #ffffff;
+            --teal: #087f7b;
+            --teal-dark: #075d5b;
+            --coral: #e76f51;
+            --shadow: 0 22px 60px rgba(25, 35, 46, .1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            color: var(--ink);
+            background: var(--paper);
+            font-family: Georgia, "Times New Roman", serif;
+            background-image: radial-gradient(circle at 10% 0%, #d9efeb 0, transparent 30%), linear-gradient(135deg, transparent 65%, #f4e8d8 100%);
+        }
+
+        button,
+        textarea,
+        select {
+            font: inherit;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        .shell {
+            width: min(1040px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 34px 0 48px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 20px;
+            margin-bottom: 28px;
+        }
+
+        .eyebrow {
+            margin: 0 0 8px;
+            color: var(--teal);
+            font: 700 12px/1.2 Arial, sans-serif;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: clamp(34px, 6vw, 62px);
+            line-height: .98;
+            font-weight: 400;
+            letter-spacing: -2px;
+        }
+
+        .intro {
+            max-width: 410px;
+            margin: 0 0 2px;
+            color: var(--muted);
+            font: 15px/1.55 Arial, sans-serif;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(280px, .9fr);
+            gap: 18px;
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, .88);
+            border: 1px solid rgba(220, 228, 231, .9);
+            box-shadow: var(--shadow);
+            border-radius: 8px;
+        }
+
+        .controls {
+            padding: 22px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--muted);
+            font: 700 12px/1.2 Arial, sans-serif;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+
+        select,
+        textarea {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            background: #fbfcfa;
+            color: var(--ink);
+            outline: none;
+        }
+
+        select {
+            height: 44px;
+            padding: 0 12px;
+        }
+
+        textarea {
+            min-height: 205px;
+            padding: 15px;
+            resize: vertical;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+
+        select:focus,
+        textarea:focus {
+            border-color: var(--teal);
+            box-shadow: 0 0 0 3px rgba(8, 127, 123, .12);
+        }
+
+        .field {
+            margin-bottom: 20px;
+        }
+
+        .actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .send {
+            border: 0;
+            border-radius: 5px;
+            padding: 12px 20px;
+            color: white;
+            background: var(--teal);
+            font: 700 14px Arial, sans-serif;
+            transition: background .2s, transform .2s;
+        }
+
+        .send:hover {
+            background: var(--teal-dark);
+            transform: translateY(-1px);
+        }
+
+        .send:disabled {
+            cursor: wait;
+            opacity: .6;
+            transform: none;
+        }
+
+        .hint {
+            color: var(--muted);
+            font: 12px Arial, sans-serif;
+        }
+
+        .result {
+            display: flex;
+            min-height: 100%;
+            flex-direction: column;
+            padding: 22px;
+        }
+
+        .result-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--line);
+        }
+
+        h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 400;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font: 12px Arial, sans-serif;
+        }
+
+        .badge::before {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--coral);
+            content: "";
+        }
+
+        .badge.ready::before {
+            background: #35a66d;
+        }
+
+        .answer {
+            flex: 1;
+            min-height: 225px;
+            padding: 22px 0;
+            white-space: pre-wrap;
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .empty {
+            color: #8a959b;
+            font-style: italic;
+        }
+
+        .meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            padding-top: 13px;
+            border-top: 1px solid var(--line);
+            color: var(--muted);
+            font: 12px Arial, sans-serif;
+        }
+
+        .error {
+            color: #b7432c;
+        }
+
+        footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 16px;
+            margin-top: 17px;
+            color: var(--muted);
+            font: 12px Arial, sans-serif;
+        }
+
+        a {
+            color: var(--teal-dark);
+        }
+
+        @media (max-width: 720px) {
+            .shell {
+                width: min(100% - 22px, 560px);
+                padding-top: 23px;
+            }
+
+            header {
+                display: block;
+            }
+
+            .intro {
+                margin-top: 14px;
+            }
+
+            .workspace {
+                grid-template-columns: 1fr;
+            }
+
+            .answer {
+                min-height: 170px;
+            }
+
+            footer {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="shell">
+        <header>
+            <div>
+                <p class="eyebrow">Local model lab</p>
+                <h1>Ollama<br>Playground</h1>
+            </div>
+            
+        </header>
+
+        <section class="workspace" aria-label="Model testing workspace">
+            <form class="panel controls" id="prompt-form">
+                <div class="field">
+                    <label for="model">Model</label>
+                    <select id="model" aria-label="Ollama model">
+                        <option value="">Use backend default</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="prompt">Prompt</label>
+                    <textarea id="prompt" required
+                        placeholder="Explain what FastAPI does in one sentence..."></textarea>
+                </div>
+                <div class="actions">
+                    <button class="send" id="send" type="submit">Send prompt</button>
+                    <span class="hint">Ctrl / Cmd + Enter</span>
+                </div>
+            </form>
+
+            <section class="panel result" aria-live="polite">
+                <div class="result-head">
+                    <h2>Response</h2>
+                    <span class="badge" id="status">Checking Ollama</span>
+                </div>
+                <div class="answer empty" id="answer">Your model's response will appear here.</div>
+                <div class="meta">
+                    <span id="model-used">No request yet</span>
+                    <a href="/docs" target="_blank" rel="noreferrer">Open API docs</a>
+                </div>
+            </section>
+        </section>
+
+        <footer>
+            <span>FastAPI + Ollama</span>
+            <span id="health-detail">Connecting to the local service...</span>
+        </footer>
+    </main>
+
+    <script>
+        const form = document.querySelector('#prompt-form');
+        const promptInput = document.querySelector('#prompt');
+        const modelSelect = document.querySelector('#model');
+        const sendButton = document.querySelector('#send');
+        const answer = document.querySelector('#answer');
+        const status = document.querySelector('#status');
+        const modelUsed = document.querySelector('#model-used');
+        const healthDetail = document.querySelector('#health-detail');
+
+        function setStatus(text, ready = false) {
+            status.textContent = text;
+            status.classList.toggle('ready', ready);
+        }
+
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/v1/models');
+                if (!response.ok) throw new Error('Models unavailable');
+                const models = await response.json();
+                models.forEach(({ name }) => {
+                    const option = document.createElement('option');
+                    option.value = name;
+                    option.textContent = name;
+                    modelSelect.append(option);
+                });
+                if (models.length) {
+                    modelSelect.value = models[0].name;
+                    setStatus('Ollama ready', true);
+                    healthDetail.textContent = `${models.length} model${models.length === 1 ? '' : 's'} available`;
+                } else {
+                    setStatus('No models found');
+                    healthDetail.textContent = 'Ollama is running, but no models are installed';
+                }
+            } catch (error) {
+                setStatus('Ollama offline');
+                healthDetail.textContent = 'Start Ollama and refresh this page';
+            }
+        }
+
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const prompt = promptInput.value.trim();
+            if (!prompt) return;
+            sendButton.disabled = true;
+            sendButton.textContent = 'Thinking...';
+            answer.classList.remove('empty', 'error');
+            answer.textContent = '';
+            modelUsed.textContent = 'Generating response...';
+            try {
+                const response = await fetch('/api/v1/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, model: modelSelect.value || null })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.detail || 'The request failed');
+                answer.textContent = data.response || '(The model returned an empty response.)';
+                modelUsed.textContent = `Model: ${data.model}`;
+                setStatus('Response ready', true);
+            } catch (error) {
+                answer.classList.add('error');
+                answer.textContent = error.message;
+                modelUsed.textContent = 'Request failed';
+                setStatus('Request error');
+            } finally {
+                sendButton.disabled = false;
+                sendButton.textContent = 'Send prompt';
+            }
+        });
+
+        promptInput.addEventListener('keydown', (event) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') form.requestSubmit();
+        });
+
+        loadModels();
+    </script>
+</body>
+
+</html>
