@@ -25,7 +25,7 @@ fastapi-ollama-backend/
 └── README.md
 ```
 
-## Option A — Run locally (no Docker)
+
 
 1. **Install Ollama** (free): https://ollama.com/download
 2. **Pull a model**:
